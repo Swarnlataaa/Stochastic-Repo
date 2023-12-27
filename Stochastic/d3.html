@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brownian Motion Visualization with D3.js</title>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        /* Add any additional styling here */
+    </style>
+</head>
+
+<body>
+
+    <!-- Container for the visualization -->
+    <div id="visualization-container"></div>
+
+    <script>
+        // Function to generate Brownian motion paths
+        function generateBrownianMotion(numSteps, dt) {
+            let t = Array.from({ length: numSteps + 1 }, (_, i) => i * dt);
+            let dW = Array.from({ length: numSteps }, () => Math.sqrt(dt) * d3.randomNormal()());
+            let W = dW.reduce((acc, increment) => [...acc, acc[acc.length - 1] + increment], [0]);
+            return t.map((time, index) => [time, W[index]]);
+        }
+
+        // Function to plot Brownian motion paths using D3.js
+        function plotBrownianMotion(paths) {
+            // Set up the SVG container
+            const svgWidth = 600;
+            const svgHeight = 400;
+            const margin = { top: 20, right: 20, bottom: 30, left: 50 };
+            const width = svgWidth - margin.left - margin.right;
+            const height = svgHeight - margin.top - margin.bottom;
+
+            const svg = d3.select("#visualization-container")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Define scales
+            const xScale = d3.scaleLinear().domain([0, d3.max(paths, d => d3.max(d, point => point[0]))]).range([0, width]);
+            const yScale = d3.scaleLinear().domain([d3.min(paths, d => d3.min(d, point => point[1])),
+            d3.max(paths, d => d3.max(d, point => point[1]))]).range([height, 0]);
+
+            // Define line function
+            const line = d3.line()
+                .x(d => xScale(d[0]))
+                .y(d => yScale(d[1]));
+
+            // Plot paths
+            svg.selectAll(".brownian-path")
+                .data(paths)
+                .enter()
+                .append("path")
+                .attr("class", "brownian-path")
+                .attr("d", line)
+                .style("fill", "none")
+                .style("stroke", () => d3.schemeCategory10[Math.floor(Math.random() * 10)]);
+
+            // Add axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale))
+                .append("text")
+                .attr("x", width)
+                .attr("y", -6)
+                .style("text-anchor", "end")
+                .text("Time");
+
+            svg.append("g")
+                .call(d3.axisLeft(yScale))
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", "0.71em")
+                .style("text-anchor", "end")
+                .text("Position");
+        }
+
+        // Example usage
+        const numPaths = 5;
+        const numSteps = 100;
+        const dt = 0.01;
+
+        const brownianPaths = Array.from({ length: numPaths }, () => generateBrownianMotion(numSteps, dt));
+        plotBrownianMotion(brownianPaths);
+    </script>
+
+</body>
+
+</html>
